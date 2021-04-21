@@ -1,0 +1,17 @@
+[package]
+name = "workflowy-cli"
+version = "0.1.0"
+authors = ["Pierre-Henri Dezanneau <ph.dezanneau@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+directories = "3.0"
+serde = { version = "1.0.125", features = ["derive"] }
+serde_json = "1.0.64"
+serde_yaml = "0.8"
+reqwest = { version = "0.11", features = ["blocking"] }
+clap = "3.0.0-beta.2"
+home = "0.5.3"
+regex = "1.4.6"
