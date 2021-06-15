@@ -1,7 +1,7 @@
 use core::fmt;
 use std::error::Error;
 
-use regex::Regex;
+use regex::{escape, Regex};
 
 use cli::*;
 use workflowy::*;
@@ -118,7 +118,7 @@ fn traverse_trees<'a>(trees: &'a Vec<Point>, point_id: &'a String) -> Option<&'a
 }
 
 fn find_remove_prefix(content: String, prefix: &String) -> GenResult<Option<String>> {
-    let payload = Regex::new(format!(r"(?i)(<.*?>)*{}(?P<name>.*)", prefix).as_str())?
+    let payload = Regex::new(format!(r"(?i)(<.*?>)*{}(?P<name>.*)", escape(prefix)).as_str())?
         .captures(content.as_str())
         .map(|cap| Some(cap.name("name").unwrap().as_str().to_string()))
         .unwrap_or(None);
@@ -139,6 +139,18 @@ fn trim(content_no_tag: String) -> String {
 
 fn extract_root_id(raw_root_id: &String) -> Option<String> {
     raw_root_id.split("/").last().map(|id| id.to_string())
+}
+
+#[test]
+fn test_find_remove_prefix() {
+    assert_eq!(
+        find_remove_prefix(
+            "example(s): this is an example".to_string(),
+            &"example(s)".to_string(),
+        )
+        .unwrap(),
+        Some(": this is an example".to_string())
+    );
 }
 
 #[test]
