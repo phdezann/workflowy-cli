@@ -7,6 +7,7 @@ use cli::*;
 use workflowy::*;
 
 use crate::cli;
+use crate::cli::Format::AnkiDict;
 use crate::error::GenResult;
 use crate::workflowy;
 
@@ -50,25 +51,7 @@ fn export_to_csv(export: &Export, dictionary: &Point) -> String {
     let output = dictionary.children.as_ref().map(|words| {
         words
             .iter()
-            .flat_map(|word| {
-                word.children.as_ref().map(|attributes| {
-                    let word = word.content.clone().trim().to_string();
-                    let definitions: Vec<String> = attributes
-                        .iter()
-                        .map(|attribute| &attribute.content)
-                        .flat_map(|content| {
-                            export
-                                .prefix
-                                .iter()
-                                .flat_map(move |prefix| find_remove_prefix(content.clone(), prefix))
-                                .filter_map(|e| e)
-                                .map(strip_prefix)
-                        })
-                        .map(trim)
-                        .collect();
-                    (word, definitions)
-                })
-            })
+            .flat_map(|word| extract_attributes(export, word))
             .fold("".to_string(), |mut acc, (word, definitions)| {
                 acc.push_str(&word);
                 acc.push_str(separator);
@@ -89,6 +72,30 @@ fn export_to_csv(export: &Export, dictionary: &Point) -> String {
     });
 
     output.unwrap_or("".to_string())
+}
+
+fn extract_attributes(export: &Export, word: &Point) -> Option<(String, Vec<String>)> {
+    word.children.as_ref().map(|attributes| {
+        let word = word.content.clone().trim().to_string();
+        let definitions = export
+            .prefix
+            .iter()
+            .map(|prefix| {
+                attributes
+                    .iter()
+                    .map(|attribute| &attribute.content)
+                    .flat_map(|content| find_remove_prefix(content.clone(), prefix))
+                    .filter_map(|elt| elt)
+                    .map(strip_prefix)
+                    .map(trim)
+                    .collect::<Vec<String>>()
+                    .first()
+                    .map(|elt| elt.clone())
+            })
+            .filter_map(|elt| elt)
+            .collect();
+        (word, definitions)
+    })
 }
 
 fn traverse_trees<'a>(trees: &'a Vec<Point>, point_id: &'a String) -> Option<&'a Point> {
@@ -139,6 +146,52 @@ fn trim(content_no_tag: String) -> String {
 
 fn extract_root_id(raw_root_id: &String) -> Option<String> {
     raw_root_id.split("/").last().map(|id| id.to_string())
+}
+
+#[test]
+fn test_extract_attributes() {
+    fn mk_point(content: String, children: Option<Vec<Point>>) -> Point {
+        Point {
+            content,
+            children,
+            id: "".to_string(),
+            note: None,
+            complete: None,
+        }
+    }
+
+    let export = Export {
+        prefix: vec![
+            "prefix_1".to_string(),
+            "prefix_2".to_string(),
+            "prefix_3".to_string(),
+        ],
+        append: vec![],
+        format: AnkiDict,
+        output: "".to_string(),
+        root: "".to_string(),
+    };
+
+    let point = mk_point(
+        "word".to_string(),
+        Some(vec![
+            mk_point("prefix_3: value3".to_string(), None), //
+            mk_point("prefix_2: value2".to_string(), None), //
+            mk_point("prefix_1: value1".to_string(), None),
+        ]),
+    );
+
+    assert_eq!(
+        extract_attributes(&export, &point),
+        Some((
+            "word".to_string(),
+            vec![
+                "value1".to_string(),
+                "value2".to_string(),
+                "value3".to_string()
+            ]
+        ))
+    );
 }
 
 #[test]
