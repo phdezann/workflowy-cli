@@ -7,7 +7,6 @@ use cli::*;
 use workflowy::*;
 
 use crate::cli;
-use crate::cli::Format::AnkiDict;
 use crate::error::GenResult;
 use crate::workflowy;
 
