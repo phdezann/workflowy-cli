@@ -1,7 +1,7 @@
 workflowy-cli
 ==============
 
-`workflowy-cli` is a experimental tool that export data from the awesome [WorkFlowy](https://workflowy.com) web-based
+`workflowy-cli` is an experimental tool that export data from the awesome [WorkFlowy](https://workflowy.com) web-based
 outliner to various formats.
 
 It's written in Rust.
